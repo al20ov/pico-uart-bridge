@@ -3,6 +3,7 @@
  * Copyright 2021 Álvaro Fernández Rojas <noltari@gmail.com>
  */
 
+#include <hardware/clocks.h>
 #include <hardware/irq.h>
 #include <hardware/structs/sio.h>
 #include <hardware/uart.h>
@@ -11,13 +12,15 @@
 #include <string.h>
 #include <tusb.h>
 
+#define OVERCLOCK_KHZ 240000
+
 #if !defined(MIN)
 #define MIN(a, b) ((a > b) ? b : a)
 #endif /* MIN */
 
 #define LED_PIN 25
 
-#define BUFFER_SIZE 2560
+#define BUFFER_SIZE 8192
 
 #define DEF_BIT_RATE 115200
 #define DEF_STOP_BITS 1
@@ -289,7 +292,7 @@ void init_uart_data(uint8_t itf)
 	uart_set_format(ui->inst, databits_usb2uart(ud->usb_lc.data_bits),
 			stopbits_usb2uart(ud->usb_lc.stop_bits),
 			parity_usb2uart(ud->usb_lc.parity));
-	uart_set_fifo_enabled(ui->inst, false);
+	uart_set_fifo_enabled(ui->inst, true);
 
 	/* UART RX Interrupt */
 	irq_set_exclusive_handler(ui->irq, ui->irq_fn);
@@ -300,6 +303,10 @@ void init_uart_data(uint8_t itf)
 int main(void)
 {
 	int itf;
+
+#if defined(OVERCLOCK_KHZ)
+	set_sys_clock_khz(OVERCLOCK_KHZ, true);
+#endif
 
 	usbd_serial_init();
 
